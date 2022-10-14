@@ -38,3 +38,7 @@ func TestRoomIDValid(t *testing.T) {
 		})
 	}
 }
+
+func TestDecryptWord(t *testing.T) {
+	assert.Equal(t, "encrypted", decrypt("zixmtkozy", 343))
+}

@@ -17,6 +17,7 @@ func main() {
 	}
 
 	fmt.Printf("Part 1: %d\n", part1(input))
+	fmt.Printf("Part 2: %d\n", part2(input))
 }
 
 func part1(input []string) int {
@@ -97,4 +98,44 @@ func (r roomID) IsValid() bool {
 	}
 
 	return true
+}
+
+func (r roomID) Decrypt() string {
+	plaintext := make([]string, len(r.parts))
+
+	for i, part := range r.parts {
+		plaintext[i] = decrypt(part, r.SectorID)
+	}
+
+	return strings.Join(plaintext, " ")
+}
+
+func part2(input []string) int {
+	for _, line := range input {
+		if line == "" {
+			continue
+		}
+
+		rid := parseRoomID(line)
+		if !rid.IsValid() {
+			continue
+		}
+
+		name := rid.Decrypt()
+		if strings.HasPrefix(name, "northpole") {
+			return rid.SectorID
+		}
+	}
+	return 0
+}
+
+func decrypt(word string, shift int) string {
+	buf := make([]byte, len(word))
+
+	for i, c := range word {
+		effective := byte(((int(c) - 'a') + shift) % 26)
+		buf[i] = 'a' + effective
+	}
+
+	return string(buf)
 }
