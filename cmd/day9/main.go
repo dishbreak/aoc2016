@@ -13,6 +13,8 @@ func main() {
 	}
 
 	fmt.Printf("Part 1: %d\n", part1(f))
+	f.Seek(0, 0)
+	fmt.Printf("Part 2: %d\n", part2(f))
 }
 
 func part1(f *os.File) int {
