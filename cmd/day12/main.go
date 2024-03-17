@@ -45,8 +45,7 @@ func execute(r io.Reader, reg map[string]int) {
 		pts := strings.Fields(pgm[pc])
 		switch pts[0] {
 		case "cpy":
-			intVal, err := strconv.Atoi(pts[1])
-			if err == nil {
+			if intVal, err := strconv.Atoi(pts[1]); err == nil {
 				reg[pts[2]] = intVal
 				continue
 			}
