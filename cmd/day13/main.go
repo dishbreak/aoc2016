@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"math"
+	"runtime"
 	"sort"
+	"sync"
 )
 
 func countOnes(a int) (oneBits int) {
@@ -103,8 +106,83 @@ func part1(favNumber int) int {
 	return dijkstra(start, end, f)
 }
 
+func part2(favNumber int) int {
+	acc := 0
+	f := floorPlan{magicNumber: favNumber}
+
+	ctx := context.Background()
+
+	// iterating over the channel returned from reachablePoints will ensure we
+	// increment the counter for every point emitted.
+	for _ = range reachablePoints(ctx, f, validPoints(ctx, f)) {
+		acc++
+	}
+	return acc
+}
+
+// validPoints returns all the points under an arc centered at (1,1) with radius 50
+// this will form an upper bound for the reachable points function
+func validPoints(ctx context.Context, f floorPlan) <-chan point {
+	result := make(chan point)
+	go func() {
+		defer close(result)
+		for x := 0; x < 52; x++ {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				y := int(math.Sqrt(2500-math.Pow(float64(x-1), 2)) + 1.0)
+				for yc := y; yc >= 0; yc-- {
+					if f.isWall(x, yc) {
+						continue
+					}
+					result <- point{x, yc}
+				}
+			}
+		}
+	}()
+
+	return result
+}
+
+// reachable points will process incoming points from the input channel
+// it will emit points that have a shortest path less than or equal to 50
+func reachablePoints(ctx context.Context, f floorPlan, input <-chan point) <-chan point {
+	result := make(chan point)
+
+	var wg sync.WaitGroup
+	go func() {
+		wg.Wait()
+		close(result)
+	}()
+
+	for i := 0; i < runtime.NumCPU(); i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case p, ok := <-input:
+					if !ok {
+						return
+					}
+					d := dijkstra(point{1, 1}, p, f)
+					if d <= 50 {
+						result <- p
+					}
+				}
+			}
+		}()
+	}
+
+	return result
+}
+
 func main() {
 	favNumber := 1352
 
 	fmt.Printf("Part 1: %d\n", part1(favNumber))
+	fmt.Printf("Part 2: %d\n", part2(favNumber))
 }
