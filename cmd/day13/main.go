@@ -46,64 +46,51 @@ var neighbors []point = []point{
 	{-1, 0}, {1, 0}, {0, -1}, {0, 1},
 }
 
-type costMap struct {
-	m           map[point]int
-	defaultCost int
-}
-
-func newCostMap(defaultCost int) *costMap {
-	return &costMap{
-		m:           make(map[point]int),
-		defaultCost: defaultCost,
-	}
-}
-
-func (c *costMap) get(p point) int {
-	cost, ok := c.m[p]
-	if !ok {
-		return c.defaultCost
-	}
-	return cost
-}
-
-func (c *costMap) set(p point, cost int) {
-	c.m[p] = cost
-}
-
 func dijkstra(start, end point, f floorPlan) int {
 	visited := make(map[point]bool)
 
 	unvisited := []point{start}
 
-	cost := newCostMap(math.MaxInt)
-	cost.set(start, 0)
+	cost := make(map[point]int)
+	cost[start] = 0
 
 	for len(unvisited) > 0 {
 		c := unvisited[0]
 		unvisited = unvisited[1:]
 
 		if c.eq(end) {
-			return cost.get(c)
+			return cost[c]
 		}
 
 		visited[c] = true
 
+		// check in each direction
 		for _, n := range neighbors {
 			nc := c.add(n)
+
+			// if the neighbor is off the edge of the map...
 			if nc.outOfBounds() {
 				continue
 			}
+			// ...or we've already visited it...
 			if visited[nc] {
 				continue
 			}
+			// ...or it's actually a wall...
 			if f.isWall(nc.x, nc.y) {
 				continue
 			}
-			cost.set(nc, cost.get(c)+1)
+
+			// ...skip it. otherwise, set its cost to be 1 more than the cost of the current node
+			cost[nc] = cost[c] + 1
 			unvisited = append(unvisited, nc)
 		}
+
+		// this isn't as nice as having a priority queue
+		// but given the overall size of the unvisited list,
+		// this is likely sufficient.
 		sort.Slice(unvisited, func(i, j int) bool {
-			return cost.get(unvisited[i]) < cost.get(unvisited[j])
+			return cost[unvisited[i]] < cost[unvisited[j]]
 		})
 	}
 
