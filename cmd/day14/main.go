@@ -14,9 +14,30 @@ func main() {
 	fmt.Printf("Part 1: %d\n", part1(salt))
 }
 
+func part1(salt string) int {
+	return findKey(salt, standardMd5)
+}
+
 var tripleChar = regexp.MustCompile(`(000|111|222|333|444|555|666|777|888|999|aaa|bbb|ccc|ddd|eee|fff)`)
 
-func part1(salt string) int {
+type hashFunc func(salt string, idx int) string
+
+func standardMd5(salt string, idx int) string {
+	val := fmt.Sprint(salt, idx)
+	hash := md5.Sum([]byte(val))
+	return hex.EncodeToString(hash[:])
+}
+
+func stretchedMd5(salt string, idx int) string {
+	h := standardMd5(salt, idx)
+	for i := 0; i < 2016; i++ {
+		b := md5.Sum([]byte(h))
+		h = hex.EncodeToString(b[:])
+	}
+	return h
+}
+
+func findKey(salt string, hasher hashFunc) int {
 	var keys []int
 	keysSeen := make(map[int]bool)
 	idx := 0
@@ -30,9 +51,7 @@ func part1(salt string) int {
 	var checks []checkRecord
 
 	for ; ; idx++ {
-		val := fmt.Sprint(salt, idx)
-		hash := md5.Sum([]byte(val))
-		key := hex.EncodeToString(hash[:])
+		key := hasher(salt, idx)
 		for _, check := range checks {
 			if check.ttl <= idx {
 				continue
