@@ -12,10 +12,15 @@ import (
 func main() {
 	salt := "ihaygndm"
 	fmt.Printf("Part 1: %d\n", part1(salt))
+	fmt.Printf("Part 2: %d\n", part2(salt))
 }
 
 func part1(salt string) int {
 	return findKey(salt, standardMd5)
+}
+
+func part2(salt string) int {
+	return findKey(salt, stretchedMd5)
 }
 
 var tripleChar = regexp.MustCompile(`(000|111|222|333|444|555|666|777|888|999|aaa|bbb|ccc|ddd|eee|fff)`)
@@ -39,7 +44,6 @@ func stretchedMd5(salt string, idx int) string {
 
 func findKey(salt string, hasher hashFunc) int {
 	var keys []int
-	keysSeen := make(map[int]bool)
 	idx := 0
 
 	type checkRecord struct {
@@ -56,9 +60,6 @@ func findKey(salt string, hasher hashFunc) int {
 			if check.ttl <= idx {
 				continue
 			}
-			if keysSeen[check.keyIdx] {
-				continue
-			}
 			if check.r.FindString(key) == "" {
 				continue
 			}
@@ -67,7 +68,6 @@ func findKey(salt string, hasher hashFunc) int {
 				sort.Ints(keys)
 				return keys[63]
 			}
-			keysSeen[check.keyIdx] = true
 			check.ttl = -1 // don't run this check anymore
 		}
 
